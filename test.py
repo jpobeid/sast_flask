@@ -1,6 +1,3 @@
-import os
-import json
+data = [100, 124]
 
-PASS_VAR = json.loads(os.environ.get('PASS_VAR'))
-
-print(PASS_VAR['email']['user'])
+print(list(map(lambda x:chr(x), data)))

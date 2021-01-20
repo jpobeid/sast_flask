@@ -141,6 +141,12 @@ class UserResource(Resource):
 
             else:
                 return {'success': False}, 404
+        elif str_page == 'upload':
+            print('in upload')
+            print(request)
+            data = request.form['data']
+            print(data.decode('utf8'))
+            return {'success': True}, 200
 
 
 api.add_resource(UserResource, '/<string:str_page>/<int:n_phase>')
