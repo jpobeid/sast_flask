@@ -142,10 +142,12 @@ class UserResource(Resource):
             else:
                 return {'success': False}, 404
         elif str_page == 'upload':
-            print('in upload')
-            print(request)
-            data = request.form['data']
-            print(data.decode('utf8'))
+            user_email = request.form['email']
+            user_pin = request.form['pin']
+            print(user_email)
+            print(user_pin)
+            file_uploaded = request.files['fileDicom']
+            file_uploaded.save(f'uploaded/dicom{n_phase}.dcm')
             return {'success': True}, 200
 
 
