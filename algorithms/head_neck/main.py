@@ -23,10 +23,11 @@ def AutoSeg(ImageData, model_path):
     model.to(device)
     test_dataset = EDataset(ImageData)
     dataloaders = DataLoader(test_dataset, batch_size=1, shuffle=False)
+    L_dataloaders = len(dataloaders)
     model.eval()
     with torch.no_grad():
         SegResult = np.empty(shape=[0, 192, 352, 16])
-        for x1, x2, x3 in dataloaders:
+        for j, (x1, x2, x3) in enumerate(dataloaders):
             x1 = torch.squeeze(x1, 0)
             x2 = torch.squeeze(x2, 0)
             x3 = torch.squeeze(x3, 0)
@@ -45,6 +46,7 @@ def AutoSeg(ImageData, model_path):
                 e_output[:, i, :, :] = esuboutput
             SegResult = np.append(
                 SegResult, e_output.transpose(0, 2, 3, 1), axis=0)
+            print(str(np.round(100*(j+1)/L_dataloaders)) + r'% complete...')
     return SegResult
 
 

@@ -116,10 +116,10 @@ class DashResource(Resource):
             code = DicomImage.get_random_image_base64text()
             return {var.str_base64_key: code}, 200
         elif str_page == 'process':
-            print('here')
-            email_sender.send_email('jobeid@stanford.edu', None, r'algorithms\head_neck\OutputData\ContouredByAI.dcm')
-            ###
-            # main_head_neck.main()
+            dir_main = os.getcwd()
+            main_head_neck.main()
+            email_sender.send_email('jobeid@stanford.edu', None, r'ContouredByAI.dcm')
+            os.chdir(dir_main)
             return var.json_success, 200
         else:
             print('other')
@@ -127,14 +127,14 @@ class DashResource(Resource):
 
     def post(self, str_page, n_index):
         if str_page == 'upload':
-            if var.name_upload_dir not in os.listdir(r'algorithms\head_neck\InputData'):
-                os.mkdir(r'algorithms\head_neck\InputData' +
-                         f'\{var.name_upload_dir}')
+            print(var.name_upload_dir)
+            print(os.listdir(var.path_upload_dir_partial))
+            if var.name_upload_dir not in os.listdir(var.path_upload_dir_partial):
+                os.mkdir(var.path_upload_dir_full)
             user_email = request.form['email']
             user_pin = request.form['pin']
             print(user_email)
             print(user_pin)
             file_uploaded = request.files['fileDicom']
-            file_uploaded.save(r'algorithms\head_neck\InputData' +
-                               f'\{var.name_upload_dir}/CT_{n_index}.dcm')
+            file_uploaded.save(var.path_upload_dir_full + f'/CT_{n_index}.dcm')
             return var.json_success, 200
