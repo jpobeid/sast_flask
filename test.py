@@ -1,3 +1,3 @@
 import os
 
-os.remove('pic1.jpg')
+os.mkdir('algorithms\prostate')

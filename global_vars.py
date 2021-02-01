@@ -1,4 +1,4 @@
-name_upload_dir = 'uploaded'
+name_upload_dir = 'uploads'
 
 str_base64_key = 'base64code'
 

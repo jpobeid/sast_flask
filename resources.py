@@ -1,14 +1,16 @@
 import os
 import pandas as pd
 
-from flask import request
+from flask import request, send_file, jsonify
 from flask_restful import Resource
 from models import db, UserModel
+from io import BytesIO
 
 from num_generator import NumGen
 import email_sender
 import global_vars as var
 from img_analysis import DicomImage
+from algorithms.head_neck import main as main_head_neck
 
 
 class TestResource(Resource):
@@ -58,7 +60,7 @@ class UserResource(Resource):
                     generated_token = NumGen.get_token()
                     generated_salt_exp = NumGen.get_salt_exp()
                     email_sender.send_email(
-                        str_received_email, generated_token)
+                        str_received_email, generated_token, None)
 
                     # Make new user and commit to DB
                     new_user = UserModel(str_received_email,
@@ -109,21 +111,30 @@ class UserResource(Resource):
 
 class DashResource(Resource):
     def get(self, str_page, n_index):
+        print(n_index)
         if str_page == 'image':
             code = DicomImage.get_random_image_base64text()
             return {var.str_base64_key: code}, 200
+        elif str_page == 'process':
+            print('here')
+            email_sender.send_email('jobeid@stanford.edu', None, r'algorithms\head_neck\OutputData\ContouredByAI.dcm')
+            ###
+            # main_head_neck.main()
+            return var.json_success, 200
         else:
+            print('other')
             return var.json_success, 200
 
     def post(self, str_page, n_index):
-        print(str_page)
         if str_page == 'upload':
-            if var.name_upload_dir not in os.listdir():
-                os.mkdir(var.name_upload_dir)
+            if var.name_upload_dir not in os.listdir(r'algorithms\head_neck\InputData'):
+                os.mkdir(r'algorithms\head_neck\InputData' +
+                         f'\{var.name_upload_dir}')
             user_email = request.form['email']
             user_pin = request.form['pin']
             print(user_email)
             print(user_pin)
             file_uploaded = request.files['fileDicom']
-            file_uploaded.save(f'uploaded/dicom{n_index}.dcm')
+            file_uploaded.save(r'algorithms\head_neck\InputData' +
+                               f'\{var.name_upload_dir}/CT_{n_index}.dcm')
             return var.json_success, 200
