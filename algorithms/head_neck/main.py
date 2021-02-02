@@ -9,11 +9,11 @@ import numpy as np
 from algorithms.head_neck.PreprocessFunctions import ReadCTData
 from algorithms.head_neck.PostprocessFunctions import WriteContourData
 import shutil
+import global_vars as var
 
-Inputdata_dir = 'InputData/'
-Model_path = 'MBUnet_1.pth'
-Template_dir = 'TemplateRT/'
-Contour_path = 'OutputData/ContouredByAI.dcm'
+Model_path = os.path.join('algorithms', var.name_dir_head_neck, 'MBUnet_1.pth')
+Template_dir = os.path.join(
+    'algorithms', var.name_dir_head_neck, 'TemplateRT/')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -50,11 +50,14 @@ def AutoSeg(ImageData, model_path):
     return SegResult
 
 
-def main():
-    os.chdir(r'algorithms\head_neck')
-    added = os.listdir(Inputdata_dir)
-    if len(added) == 1:
-        print("Start processing case:", ", ".join(added))
+def main(str_email):
+    Inputdata_dir = var.name_dir_input + '/'
+    if str_email not in os.listdir(var.name_dir_output):
+        os.mkdir(os.path.join(var.name_dir_output, str_email))
+    Outputdata_dir = os.path.join(var.name_dir_output, str_email, var.name_output_file)
+    dir_process = [str_email]
+    if len(dir_process) == 1:
+        print("Start processing case:", ", ".join(dir_process))
         time.sleep(1)
 
         ImageData, PatientName = ReadCTData(Inputdata_dir)
@@ -64,8 +67,6 @@ def main():
         print('Segmentation results sizes:', SegResult.shape)
 
         WriteContourData(Inputdata_dir, PatientName,
-                         SegResult, Template_dir, Contour_path)
+                         SegResult, Template_dir, Outputdata_dir)
         print('Segmentation of case: ' + PatientName + ' has been completed!')
-        shutil.rmtree(Inputdata_dir + "/" + added[0] + "/")
-
-        os.chdir(r'OutputData')
+        shutil.rmtree(Inputdata_dir + "/" + dir_process[0] + "/")

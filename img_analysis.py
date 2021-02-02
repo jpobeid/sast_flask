@@ -12,9 +12,9 @@ class DicomImage():
         self.n_total = len(os.listdir(var.path_upload_dir_full))
 
     @staticmethod
-    def get_random_image_base64text():
+    def get_random_image_base64text(str_email):
         dir_main = os.getcwd()
-        os.chdir(var.path_upload_dir_full)
+        os.chdir(os.path.join(var.name_dir_input, str_email))
         n_total = len(os.listdir())
         index_image = np.random.randint(n_total)
         d = pyd.dcmread(os.listdir()[index_image])

@@ -1,3 +1,5 @@
+import shutil
 import os
+import global_vars as var
 
-os.mkdir('algorithms\prostate')
+print('hi')

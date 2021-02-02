@@ -1,3 +1,4 @@
+import global_vars as var
 import numpy as np
 import hashlib
 
@@ -20,3 +21,10 @@ class NumGen():
         str_combination = hashed_pass + str(salt)
         salt_hashed_password = hashlib.sha256(str_combination.encode('utf8')).hexdigest()
         return salt_hashed_password
+
+    @staticmethod
+    def get_user_pin(token):
+        salt = var.test_secret_key
+        str_combination = str(token) + salt
+        salt_hashed_pin = hashlib.sha256(str_combination.encode('utf8')).hexdigest()
+        return salt_hashed_pin

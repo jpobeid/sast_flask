@@ -1,10 +1,10 @@
 import os
+import shutil
 import pandas as pd
 
-from flask import request, send_file, jsonify
+from flask import request
 from flask_restful import Resource
 from models import db, UserModel
-from io import BytesIO
 
 from num_generator import NumGen
 import email_sender
@@ -36,7 +36,7 @@ class UserResource(Resource):
                         str_received_hashed_pass, user.token, user.salt_exp)
                     is_password_correct = str_salt_hashed_pass == user.password
                     if is_password_correct:
-                        return var.json_success, 200
+                        return {'token': str(user.token), 'pin': NumGen.get_user_pin(user.token)}, 200
                     else:
                         return var.json_failure, 401
                 else:
@@ -111,30 +111,40 @@ class UserResource(Resource):
 
 class DashResource(Resource):
     def get(self, str_page, n_index):
-        print(n_index)
-        if str_page == 'image':
-            code = DicomImage.get_random_image_base64text()
+        if str_page == 'process':
+            user_email = request.headers['email']
+            if n_index == 0:
+                #Head & Neck
+                # main_head_neck.main(user_email)
+                email_sender.send_email(
+                    user_email, None, os.path.join(var.name_dir_output, user_email, var.name_output_file))
+                print(f'Email sent to: {user_email}')
+                shutil.rmtree(os.path.join(var.name_dir_output, user_email))
+                return var.json_success, 200
+            else:
+                return var.json_failure, 400
+        elif str_page == 'image':
+            user_email = request.headers['email']
+            code = DicomImage.get_random_image_base64text(user_email)
             return {var.str_base64_key: code}, 200
-        elif str_page == 'process':
-            dir_main = os.getcwd()
-            main_head_neck.main()
-            email_sender.send_email('jobeid@stanford.edu', None, r'ContouredByAI.dcm')
-            os.chdir(dir_main)
-            return var.json_success, 200
         else:
-            print('other')
-            return var.json_success, 200
+            return var.json_failure, 400
 
     def post(self, str_page, n_index):
-        if str_page == 'upload':
-            print(var.name_upload_dir)
-            print(os.listdir(var.path_upload_dir_partial))
-            if var.name_upload_dir not in os.listdir(var.path_upload_dir_partial):
-                os.mkdir(var.path_upload_dir_full)
+        if str_page == var.str_page_upload:
             user_email = request.form['email']
+            user_token = request.form['token']
             user_pin = request.form['pin']
-            print(user_email)
-            print(user_pin)
-            file_uploaded = request.files['fileDicom']
-            file_uploaded.save(var.path_upload_dir_full + f'/CT_{n_index}.dcm')
-            return var.json_success, 200
+            is_authenticated = user_pin == NumGen.get_user_pin(user_token)
+            if is_authenticated:
+                path_input = os.path.join(var.path_main, var.name_dir_input)
+                path_upload = os.path.join(path_input, user_email)
+                if not os.path.exists(path_upload):
+                    os.mkdir(path_upload)
+                file_uploaded = request.files['fileDicom']
+                file_uploaded.save(path_upload + f'/CT_{n_index}.dcm')
+                return var.json_success, 200
+            else:
+                return var.json_failure, 403
+        else:
+            return var.json_failure, 400
