@@ -3,14 +3,15 @@ import numpy as np
 
 from flask_restful import fields
 from flask_sqlalchemy import SQLAlchemy
+import global_vars as var
 
 db = SQLAlchemy()
 
 
 def init_db():
-    if not np.any([e.split('.')[-1] == 'db' for e in os.listdir()]):
+    if not os.path.exists(var.PATH_DATABASE):
         db.create_all()
-        print('Initialized database')
+        print('Initialized database...')
 
 
 class UserModel(db.Model):

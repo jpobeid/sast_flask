@@ -1,12 +1,10 @@
-import os
-import json
 import smtplib
 from email.message import EmailMessage
 
-PASS_VAR = json.loads(os.environ.get('PASS_VAR'))
-EMAIL_ADDRESS = PASS_VAR['email']['user']
-EMAIL_PASSWORD = PASS_VAR['email']['pass']
+EMAIL_ADDRESS = 'stanfordxrtresidents@gmail.com'
+EMAIL_PASSWORD = 'Qu4dsh0t'
 
+### Need to fix this, now that gmail disabled less secure access!!!
 
 def send_email(to_address, token, attachment):
     msg = EmailMessage()

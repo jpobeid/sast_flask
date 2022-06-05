@@ -1,9 +1,11 @@
 import os
 
-test_secret_key = 'secret'
+PATH_DATABASE = os.path.join('assets', 'database.db')
+PATH_AUTHORIZED_EMAILS = os.path.join('assets', 'authorized_emails.csv')
 
-name_dir_input = 'InputData'
-name_dir_output = 'OutputData'
+PATH_INPUTS = os.path.join('data', 'inputs')
+PATH_OUTPUTS = os.path.join('data', 'outputs')
+
 name_output_file = 'ContouredByAI.dcm'
 name_dir_head_neck = 'head_neck'
 
