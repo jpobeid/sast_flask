@@ -4,11 +4,11 @@ import pandas as pd
 
 from flask import request
 from flask_restful import Resource
-from models import db, UserModel
+from models import db, UserModel, SeriesModel
 
-from functions import num_generator as ng, email_sender, img_analysis as img
+from functions import dicom_analysis as dicom, num_generator as ng, admin as adm, email_sender
 import global_vars as var
-from algorithms.head_neck import main as main_head_neck
+# from algorithms.head_neck import main as main_head_neck
 
 
 class TestResource(Resource):
@@ -34,6 +34,8 @@ class UserResource(Resource):
                         received_hashed_pass, user.token, user.salt_exp)
                     is_password_correct = salt_rehashed_pass == user.password
                     if is_password_correct:
+                        # Login the user and provide both token & pin, but first clear their input directory
+                        adm.clear_input_directory(user.email)
                         return {'token': str(user.token), 'pin': ng.make_user_pin(user.email, user.token)}, 200
                     else:
                         return var.json_failure, 401
@@ -120,16 +122,35 @@ class UserResource(Resource):
                     # Generate user profile in inputs, making further registration unavailable
                     os.mkdir(os.path.join(var.PATH_INPUTS, received_email))
                     print(f'Created {user.email} input profile...')
+                    # Also create a SeriesModel entry for this user in the db
+                    series_new = SeriesModel(
+                        user.email, None, None, None)
+                    db.session.add(series_new)
+                    db.session.commit()
+                    print(f'Created {user.email} Series entry in database...')
                 else:
                     return var.json_failure, 401
             else:
                 return var.json_failure, 404
+        else:
+            return var.json_failure, 404
 
 
 class DashResource(Resource):
     def get(self, page, index):
-        if page == 'process':
-            user_email = request.headers['email']
+        user_email = request.headers['email']
+        path_user_input = os.path.join(var.PATH_INPUTS, user_email)
+        if page == 'verify':
+            # Perform dicom verification, if fails clear the input directory
+            result = dicom.verify_series(user_email, path_user_input)
+            if result[-1] != 200:
+                adm.clear_input_directory(user_email)
+            return result
+        elif page == 'image':
+            # Return a sample image (in base64) to view
+            code = dicom.get_random_image_base64text(path_user_input)
+            return {var.KEY_BASE64: code}, 200
+        elif page == 'process':
             if index == 0:
                 #Head & Neck
                 # main_head_neck.main(user_email)
@@ -140,23 +161,22 @@ class DashResource(Resource):
                 return var.json_success, 200
             else:
                 return var.json_failure, 400
-        elif page == 'image':
-            user_email = request.headers['email']
-            code = img.get_random_image_base64text(user_email)
-            return {var.str_base64_key: code}, 200
+        elif page == 'logout':
+            return var.json_success, 200
         else:
-            return var.json_failure, 400
+            return var.json_failure, 404
 
     def post(self, page, index):
-        if page == var.str_page_upload:
+        if page == 'upload':
             user_email = request.form['email']
             user_token = request.form['token']
             user_pin = request.form['pin']
-            is_authenticated = user_pin == ng.make_user_pin(user_email, user_token)
+            is_authenticated = user_pin == ng.make_user_pin(
+                user_email, user_token)
             if is_authenticated:
-                path_upload = os.path.join(var.PATH_INPUTS, user_email)
+                path_user_input = os.path.join(var.PATH_INPUTS, user_email)
                 file_uploaded = request.files['fileDicom']
-                file_uploaded.save(path_upload + f'/CT_{index}.dcm')
+                file_uploaded.save(path_user_input + f'/CT_{index}.dcm')
                 return var.json_success, 200
             else:
                 return var.json_failure, 403
